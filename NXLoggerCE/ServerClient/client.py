@@ -1,30 +1,26 @@
-from pynput import keyboard
 import socket
-import threading
 
-SERVER_IP = '127.0.0.1'  # Change this to your server IP
+SERVER_IP = '127.0.0.1'
 SERVER_PORT = 9999
-ALLOWED_KEYS = {'w', 'a', 's', 'd', 'q'}
+EXIT_COMMANDS = {'quit', 'q', 'no', 'exit'}
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((SERVER_IP, SERVER_PORT))
 
-def on_press(key):
-    try:
-        k = key.char.lower()
-        if k in ALLOWED_KEYS:
-            client_socket.sendall(k.encode())
-            if k == 'q':
-                print("Exiting...")
-                client_socket.close()
-                return False  # Stop listener
-            # Receive server response
-            response = client_socket.recv(1024).decode()
-            print(f"Server: {response}")
-    except AttributeError:
-        pass
+print("Client connected. Type commands. Type 'QUIT' or 'NO' to exit.\n")
 
-print("Client connected. Press WASD to send. Press 'q' to quit.")
-listener = keyboard.Listener(on_press=on_press)
-listener.start()
-listener.join()
+while True:
+    try:
+        cmd = input(">> ").strip()
+        client_socket.sendall(cmd.encode())
+        response = client_socket.recv(4096).decode()
+        print(f"Server: {response}")
+
+        if cmd.lower() in EXIT_COMMANDS:
+            print("Exiting client.")
+            break
+    except Exception as e:
+        print("Error:", e)
+        break
+
+client_socket.close()
